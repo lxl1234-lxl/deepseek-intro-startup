@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>DeepSeek 启动问题</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;
+    -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;
+    overscroll-behavior:none}
+  #v{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#000;display:block}
+</style>
+</head>
+<body>
+
+<video id="v" playsinline autoplay muted loop preload="auto"></video>
+
+<script>
+/* ================= 片头配置（每个子文件夹只改这一段） ================= */
+var CLIP = {
+  name: "DeepSeek 启动问题",
+  file: "deepseek-startup-intro.mp4"
+};
+/* ===================================================================== */
+
+var v = document.getElementById("v");
+document.title = CLIP.name;
+v.setAttribute("src", CLIP.file);
+
+function play(){ var p = v.play(); if (p && typeof p.catch === "function") p.catch(function(){}); }
+
+/* 全屏 + 锁定横屏：浏览器要求必须由用户手势触发 */
+function goFullLandscape(){
+  var p = null;
+  try{
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen){
+      p = document.documentElement.requestFullscreen({ navigationUI: "hide" });
+    }
+  }catch(e){}
+  Promise.resolve(p).catch(function(){}).then(function(){
+    try{
+      if (screen.orientation && screen.orientation.lock){
+        return screen.orientation.lock("landscape");
+      }
+    }catch(e){}
+  }).catch(function(){});
+}
+
+/* 打开即静音自动播放（浏览器只允许静音自动播） */
+play();
+
+/* 第一次触屏：开启声音 + 全屏 + 转横屏，全程无提示文字 */
+var armed = false;
+window.addEventListener("pointerdown", function(ev){
+  if (armed) return;
+  if (ev.pointerType === "mouse" && ev.button !== 0) return;
+  armed = true;
+  goFullLandscape();
+  try{ v.muted = false; }catch(e){}
+  play();
+});
+
+/* 加载失败静默重试，最多 3 次 */
+var retry = 0;
+v.addEventListener("playing", function(){ retry = 0; });
+v.addEventListener("error", function(){
+  if (!v.currentSrc) return;
+  if (retry >= 3) return;
+  retry++;
+  setTimeout(function(){
+    v.load();
+    play();
+  }, 1200);
+});
+</script>
+</body>
+</html>
